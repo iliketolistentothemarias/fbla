@@ -25,8 +25,8 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
     setIsGrading(true)
 
     try {
-      const systemPrompt = `You are grading an FBLA Securities and Investments student's flashcard answer. Return ONLY valid JSON with no markdown. Format: { "correct": boolean, "score": number, "feedback": string, "keyMisses": string[] }`
-      const userMessage = `Term: "${term.term}"\nCorrect Definition: "${term.definition}"\nStudent's Answer: "${input}"\n\nGrade this answer.`
+      const systemPrompt = `You are grading an FBLA Securities and Investments student's flashcard answer. Be extremely lenient. The student's answer should be marked 'correct' (true) if it captures the core gist, basic understanding, or main idea of the definition, even if it is very short, uses different words, or is poorly phrased. Ignore spelling and grammar. A score of 50 or above MUST result in 'correct: true'. Return ONLY valid JSON with no markdown. Format: { "correct": boolean, "score": number, "feedback": string, "keyMisses": string[] }`
+      const userMessage = `Term: "${term.term}"\nCorrect Definition: "${term.definition}"\nStudent's Answer: "${input}"\n\nGrade this answer leniently.`
       
       const response = await callAI(systemPrompt, [{ role: 'user', content: userMessage }])
       
