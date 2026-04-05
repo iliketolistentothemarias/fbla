@@ -10,6 +10,7 @@ import Flashcards from './pages/Flashcards'
 import Learn from './pages/Learn'
 import Browse from './pages/Browse'
 import HTS from './pages/HTS'
+import Statistics from './pages/Statistics'
 import WarRoom from './pages/WarRoom'
 import Settings from './pages/Settings'
 
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/statistics" element={<Statistics />} />
           <Route path="/hts" element={<HTS />} />
           <Route path="/war-room" element={<WarRoom />} />
           <Route path="/settings" element={<Settings />} />

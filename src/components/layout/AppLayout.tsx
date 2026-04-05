@@ -17,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { label: 'Flashcards', path: '/flashcards', icon: CreditCard },
     { label: 'Learn', path: '/learn', icon: Brain },
     { label: 'Browse All', path: '/browse', icon: List },
+    { label: 'Statistics', path: '/statistics', icon: Flame },
     { label: 'Hard Topics', path: '/hts', icon: Flame },
     { label: 'War Room', path: '/war-room', icon: Shield },
   ]
