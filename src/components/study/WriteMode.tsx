@@ -49,23 +49,22 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
     try {
       const systemPrompt = `You grade FBLA Securities and Investments "write the definition" flashcard answers.
 
-Compare the student answer to the official definition. Score based on how well they demonstrate genuine understanding and recall of the key ideas — not just topic awareness.
+Compare the student answer to the official definition. Score based on whether they understand the functional concept, NOT on whether they memorized exact vocabulary.
 
-Scoring rubric (be fair but firm — do NOT inflate scores):
-- 90–100: Covers all essential ideas from the official definition with accurate, specific language. Minor wording differences are fine. Shows clear mastery.
-- 75–89: Captures the core concept correctly and mentions most key elements, but may miss one secondary detail or use slightly imprecise language. Still demonstrates solid understanding.
-- 60–74: Gets the general idea right and includes at least one specific key element from the official definition, but is missing important details or is too vague on specifics. Shows partial understanding.
-- 40–59: On the right topic but mostly surface-level. Uses generic phrasing, misses multiple key specifics, or confuses related concepts. Not exam-ready.
-- 20–39: Only tangentially related or shows significant misunderstanding. May have one correct keyword but no real grasp of the concept.
-- 0–19: Wrong, irrelevant, or essentially blank.
+Scoring rubric (be generous with students who explain the concept correctly in their own words):
+- 85–100: Captures the main functional idea of the definition perfectly. Minor wording differences or skipping secondary context (e.g., "in a rights offering") is perfectly fine as long as the core action/concept is there.
+- 72–84: Gets the core concept right using plain English. For example, if the definition says "a firm commitment by an underwriter to purchase leftover shares" and the student says "an underwriter buys whatever shares are left," give them full credit in this range. Do NOT penalize for missing exact jargon like "firm commitment" or specific edge-cases.
+- 55–71: Has the right general idea but is genuinely missing a crucial functional part of the main action. 
+- 35–54: On the right topic but mostly surface-level. Uses generic phrasing or confuses related concepts.
+- 0–34: Wrong, irrelevant, or essentially blank.
 
 Important rules:
-- Ignore minor spelling and grammar mistakes.
-- A one-sentence paraphrase that skips concrete details (e.g. premiums, maturity dates, risk factors, specific parties involved) should NOT score above 65 when the official definition includes those specifics.
-- Conversely, don't penalize students who explain the concept well in their own words — they don't need to match the textbook verbatim.
+- Ignore spelling and grammar. 
+- If the student explains the primary action or mechanics correctly in plain English, they MUST score 75+.
+- Do NOT dock points if they skip exact terminology as long as their description implies the same thing (e.g. "agrees to" = "commitment").
 - "correct" must be true if and only if score >= ${PASS_SCORE}.
 
-Return a single JSON object (no markdown) with keys: correct (boolean), score (integer 0–100), feedback (2–3 sentences: acknowledge what they got right, then note what key ideas from the official definition were missing or could be stronger), keyMisses (short strings, 0–5 items, each naming one missing/imprecise concept from the official definition).`
+Return a single JSON object (no markdown) with keys: correct (boolean), score (integer 0–100), feedback (2–3 sentences: be encouraging, acknowledge what they got right, and gently note what detail would make it perfect), keyMisses (short strings, 0–3 items of actual missed concepts, NOT just missing vocabulary words).`
       const userMessage = `Term: "${term.term}"\nOfficial definition: "${term.definition}"\nStudent answer: "${input}"\n\nRespond with only the JSON object.`
       
       const response = await callAI(systemPrompt, [{ role: 'user', content: userMessage }], { jsonObject: true })
