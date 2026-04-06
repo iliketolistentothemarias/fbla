@@ -8,6 +8,28 @@ import { Term } from '../../types'
 import { CountUp } from '../ui/CountUp'
 import { cn } from '../../lib/utils'
 
+/** Aligned with prompt: at or above this score counts as a pass for SRS. */
+const PASS_SCORE = 72
+
+type GradeResult = {
+  correct: boolean
+  score: number
+  feedback: string
+  keyMisses: string[]
+}
+
+function normalizeGrade(raw: unknown): GradeResult {
+  const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const n = Number(o.score)
+  const score = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0
+  const passed = score >= PASS_SCORE
+  const feedback = typeof o.feedback === 'string' && o.feedback.trim() ? o.feedback.trim() : 'No feedback returned.'
+  const keyMisses = Array.isArray(o.keyMisses)
+    ? o.keyMisses.filter((m): m is string => typeof m === 'string' && m.trim().length > 0)
+    : []
+  return { correct: passed, score, feedback, keyMisses }
+}
+
 export default function WriteMode({ term, onNext }: { term: Term, onNext: (correct?: boolean) => void }) {
   const { updateTerm } = useAppStore()
   const [input, setInput] = useState('')
@@ -25,10 +47,26 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
     setIsGrading(true)
 
     try {
-      const systemPrompt = `You are grading an FBLA Securities and Investments student's flashcard answer. Be extremely lenient. The student's answer should be marked 'correct' (true) if it captures the core gist, basic understanding, or main idea of the definition, even if it is very short, uses different words, or is poorly phrased. Ignore spelling and grammar. A score of 50 or above MUST result in 'correct: true'. Return ONLY valid JSON with no markdown. Format: { "correct": boolean, "score": number, "feedback": string, "keyMisses": string[] }`
-      const userMessage = `Term: "${term.term}"\nCorrect Definition: "${term.definition}"\nStudent's Answer: "${input}"\n\nGrade this answer leniently.`
+      const systemPrompt = `You grade FBLA Securities and Investments "write the definition" flashcard answers.
+
+Compare the student answer to the official definition you are given. Score how exam-ready their recall is—not how "close" the topic sounds.
+
+Scoring rubric (use the full range; do not inflate):
+- 85–100: Covers the same essential ideas as the official definition (obligations, parties, time horizon, money flows, risk/return, regulation—whatever the definition actually stresses). Wording can differ; minor gaps OK.
+- 70–84: Core mechanism is mostly right but misses one substantive element that the official definition includes, OR uses vague language where the definition is specific.
+- 55–69: Right topic and a true fragment, but omits multiple substantive points from the official definition OR too shallow to show real understanding.
+- 35–54: Mostly generic, confused, or only keyword association without accurate structure.
+- 0–34: Wrong, irrelevant, or nonsensical.
+
+Rules:
+- Ignore minor spelling/grammar.
+- Do NOT give 70+ for answers that only restate the term in plain English or give a one-sentence gloss when the official definition names concrete features (e.g. premiums, beneficiaries, cash value, duration) that the student skipped.
+- "correct" in your JSON must be true if and only if score is ${PASS_SCORE} or higher.
+
+Return a single JSON object (no markdown) with keys: correct (boolean), score (integer 0–100), feedback (2–4 sentences: what matched the definition, what substantive pieces from the official definition were missing or wrong), keyMisses (short strings, 0–5 items, each naming one missing/wrong idea from the official definition).`
+      const userMessage = `Term: "${term.term}"\nOfficial definition: "${term.definition}"\nStudent answer: "${input}"\n\nRespond with only the JSON object.`
       
-      const response = await callAI(systemPrompt, [{ role: 'user', content: userMessage }])
+      const response = await callAI(systemPrompt, [{ role: 'user', content: userMessage }], { jsonObject: true })
       
       let result = null
       try {
@@ -38,8 +76,9 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
         if (match) result = JSON.parse(match[0])
       }
 
-      setFeedback(result)
-      if (result?.correct) {
+      const graded = normalizeGrade(result)
+      setFeedback(graded)
+      if (graded.correct) {
         sounds.correct()
         updateTerm(term.id, { known: true, timesCorrect: term.timesCorrect + 1 })
       } else {
@@ -64,10 +103,22 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
     </motion.div>
   )
 
+  const getStatusText = (score: number, correct: boolean) => {
+    if (correct) {
+      if (score >= 90) return "Mastered!"
+      if (score >= 82) return "Excellent!"
+      return "Correct!"
+    }
+    if (score >= 60) return "Almost there"
+    if (score >= 42) return "Partial credit"
+    if (score >= 22) return "Keep practicing"
+    return "Not quite"
+  }
+
   return (
     <div className="flex flex-col h-full w-full max-w-4xl mx-auto gap-8 pt-4 pb-6">
       <div className="card flex-1 p-12 relative flex flex-col justify-center overflow-hidden">
-        {feedback?.score && floatingScore(feedback.score)}
+        {feedback != null && Number.isFinite(feedback.score) && floatingScore(feedback.score)}
         
         <h2 className="text-3xl font-light text-center mb-8 text-[var(--text-primary)]">{term.term}</h2>
         
@@ -98,7 +149,7 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
             <div className={cn("p-8 rounded-xl border flex flex-col gap-6", feedback.correct ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200")}>
               <div className="flex justify-between items-start">
                 <h4 className={cn("font-bold text-2xl", feedback.correct ? "text-green-700" : "text-red-700")}>
-                  {feedback.correct ? "Mastered!" : "Almost There"}
+                  {getStatusText(feedback.score, feedback.correct)}
                 </h4>
                 <div className={cn("font-mono text-2xl font-bold", feedback.correct ? "text-green-700" : "text-red-700")}><CountUp end={feedback.score} />%</div>
               </div>

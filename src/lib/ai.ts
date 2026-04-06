@@ -1,7 +1,16 @@
 import OpenAI from 'openai'
 import { Message } from '../types'
 
-export async function callAI(system: string, messages: Message[]): Promise<string> {
+export type CallAIOptions = {
+  /** Ask the model to return JSON only (adds response_format). System/user text should mention JSON. */
+  jsonObject?: boolean
+}
+
+export async function callAI(
+  system: string,
+  messages: Message[],
+  options?: CallAIOptions
+): Promise<string> {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   
   if (!apiKey) {
@@ -21,7 +30,8 @@ export async function callAI(system: string, messages: Message[]): Promise<strin
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: aiMessages as any,
-    max_tokens: 1000
+    max_tokens: 1000,
+    ...(options?.jsonObject ? { response_format: { type: 'json_object' } } : {})
   })
 
   return response.choices[0]?.message?.content || ''
