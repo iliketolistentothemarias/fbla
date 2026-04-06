@@ -49,21 +49,23 @@ export default function WriteMode({ term, onNext }: { term: Term, onNext: (corre
     try {
       const systemPrompt = `You grade FBLA Securities and Investments "write the definition" flashcard answers.
 
-Compare the student answer to the official definition you are given. Score how exam-ready their recall is—not how "close" the topic sounds.
+Compare the student answer to the official definition. Score based on how well they demonstrate genuine understanding and recall of the key ideas — not just topic awareness.
 
-Scoring rubric (use the full range; do not inflate):
-- 85–100: Covers the same essential ideas as the official definition (obligations, parties, time horizon, money flows, risk/return, regulation—whatever the definition actually stresses). Wording can differ; minor gaps OK.
-- 70–84: Core mechanism is mostly right but misses one substantive element that the official definition includes, OR uses vague language where the definition is specific.
-- 55–69: Right topic and a true fragment, but omits multiple substantive points from the official definition OR too shallow to show real understanding.
-- 35–54: Mostly generic, confused, or only keyword association without accurate structure.
-- 0–34: Wrong, irrelevant, or nonsensical.
+Scoring rubric (be fair but firm — do NOT inflate scores):
+- 90–100: Covers all essential ideas from the official definition with accurate, specific language. Minor wording differences are fine. Shows clear mastery.
+- 75–89: Captures the core concept correctly and mentions most key elements, but may miss one secondary detail or use slightly imprecise language. Still demonstrates solid understanding.
+- 60–74: Gets the general idea right and includes at least one specific key element from the official definition, but is missing important details or is too vague on specifics. Shows partial understanding.
+- 40–59: On the right topic but mostly surface-level. Uses generic phrasing, misses multiple key specifics, or confuses related concepts. Not exam-ready.
+- 20–39: Only tangentially related or shows significant misunderstanding. May have one correct keyword but no real grasp of the concept.
+- 0–19: Wrong, irrelevant, or essentially blank.
 
-Rules:
-- Ignore minor spelling/grammar.
-- Do NOT give 70+ for answers that only restate the term in plain English or give a one-sentence gloss when the official definition names concrete features (e.g. premiums, beneficiaries, cash value, duration) that the student skipped.
-- "correct" in your JSON must be true if and only if score is ${PASS_SCORE} or higher.
+Important rules:
+- Ignore minor spelling and grammar mistakes.
+- A one-sentence paraphrase that skips concrete details (e.g. premiums, maturity dates, risk factors, specific parties involved) should NOT score above 65 when the official definition includes those specifics.
+- Conversely, don't penalize students who explain the concept well in their own words — they don't need to match the textbook verbatim.
+- "correct" must be true if and only if score >= ${PASS_SCORE}.
 
-Return a single JSON object (no markdown) with keys: correct (boolean), score (integer 0–100), feedback (2–4 sentences: what matched the definition, what substantive pieces from the official definition were missing or wrong), keyMisses (short strings, 0–5 items, each naming one missing/wrong idea from the official definition).`
+Return a single JSON object (no markdown) with keys: correct (boolean), score (integer 0–100), feedback (2–3 sentences: acknowledge what they got right, then note what key ideas from the official definition were missing or could be stronger), keyMisses (short strings, 0–5 items, each naming one missing/imprecise concept from the official definition).`
       const userMessage = `Term: "${term.term}"\nOfficial definition: "${term.definition}"\nStudent answer: "${input}"\n\nRespond with only the JSON object.`
       
       const response = await callAI(systemPrompt, [{ role: 'user', content: userMessage }], { jsonObject: true })
